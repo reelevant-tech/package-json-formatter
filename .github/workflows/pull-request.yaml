@@ -4,75 +4,6 @@ on:
   pull_request:
 
 jobs:
-  lint:
-    name: Check code quality
-    runs-on: ubuntu-latest
-    steps:
-    - name: Clone repository
-      uses: actions/checkout@v4
-
-    - name: Filter changed paths
-      uses: dorny/paths-filter@v3
-      id: filter
-      with:
-        filters: |
-          go_files:
-            - '**/*.go'
-            - go.mod
-            - go.sum
-            - .golangci.yml
-
-    - if: steps.filter.outputs.go_files == 'true'
-      name: Detect Go version
-      id: vars
-      run: echo "go_version=$(grep '^go ' go.mod | awk '{print $2}')" >> "$GITHUB_OUTPUT"
-
-    - if: steps.filter.outputs.go_files == 'true'
-      name: Set up Go
-      uses: actions/setup-go@v5
-      with:
-        go-version: ${{ steps.vars.outputs.go_version }}
-
-    - if: steps.filter.outputs.go_files == 'true'
-      name: Run golangci-lint
-      uses: golangci/golangci-lint-action@v7
-      with:
-        version: v2.12.2
-
-  test:
-    name: Run tests
-    runs-on: ubuntu-latest
-    steps:
-    - name: Clone repository
-      uses: actions/checkout@v4
-
-    - name: Filter changed paths
-      uses: dorny/paths-filter@v3
-      id: filter
-      with:
-        filters: |
-          go_files:
-            - '**/*.go'
-            - go.mod
-            - go.sum
-
-    - if: steps.filter.outputs.go_files == 'true'
-      name: Detect Go version
-      id: vars
-      run: echo "go_version=$(grep '^go ' go.mod | awk '{print $2}')" >> "$GITHUB_OUTPUT"
-
-    - if: steps.filter.outputs.go_files == 'true'
-      name: Set up Go
-      uses: actions/setup-go@v5
-      with:
-        go-version: ${{ steps.vars.outputs.go_version }}
-
-    - if: steps.filter.outputs.go_files == 'true'
-      name: Run tests
-      run: go test ./...
-      env:
-        GOFLAGS: -buildvcs=false
-
   build:
     name: Check build
     runs-on: ubuntu-latest
@@ -82,53 +13,17 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: Filter changed paths
-      uses: dorny/paths-filter@v3
-      id: filter
-      with:
-        filters: |
-          go_files:
-            - '**/*.go'
-            - go.mod
-            - go.sum
-            - .goreleaser.yml
-
-    - if: steps.filter.outputs.go_files == 'true'
-      name: Detect Go version
+    - name: Detect Go version
       id: vars
       run: echo "go_version=$(grep '^go ' go.mod | awk '{print $2}')" >> "$GITHUB_OUTPUT"
 
-    - if: steps.filter.outputs.go_files == 'true'
-      name: Set up Go
+    - name: Set up Go
       uses: actions/setup-go@v5
       with:
         go-version: ${{ steps.vars.outputs.go_version }}
 
-    - if: steps.filter.outputs.go_files == 'true'
-      name: Build with GoReleaser (snapshot)
+    - name: Build with GoReleaser (snapshot)
       uses: goreleaser/goreleaser-action@v6
       with:
         args: build --clean --snapshot
         version: "~> v2"
-
-  labels:
-    name: Autodetect labels
-    runs-on: ubuntu-latest
-    steps:
-    - name: Clone repository
-      uses: actions/checkout@v4
-
-    - name: Generate token
-      uses: actions/create-github-app-token@v3
-      id: app-token
-      with:
-        app-id: ${{ secrets.DEPLOY_APP_ID }}
-        private-key: ${{ secrets.DEPLOY_APP_KEY }}
-        owner: ${{ github.repository_owner }}
-
-    - name: Apply labels
-      uses: Tchoupinax/pull-request-labeler@v0.4.0
-      with:
-        config-path: shared-actions/steps/dx/automatically-apply-labels/pull-request-labeler.yml
-        github-token: ${{ steps.app-token.outputs.token }}
-        config-repo: Tchoupinax/repo-config

@@ -1,4 +1,4 @@
-name: Prepare next release
+name: Release
 
 on:
   push:
@@ -7,11 +7,10 @@ on:
 
 permissions:
   contents: write
-  pull-requests: read
 
 jobs:
-  release-draft:
-    name: Update release draft
+  release:
+    name: Release
     runs-on: ubuntu-latest
     steps:
     - name: Clone repository
@@ -19,7 +18,19 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: Run release drafter
-      uses: release-drafter/release-drafter@v7
+    - name: Detect Go version
+      id: vars
+      run: echo "go_version=$(grep '^go ' go.mod | awk '{print $2}')" >> "$GITHUB_OUTPUT"
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: ${{ steps.vars.outputs.go_version }}
+
+    - name: Run GoReleaser
+      uses: goreleaser/goreleaser-action@v6
+      with:
+        version: "~> v2"
+        args: release --clean
       env:
         GITHUB_TOKEN: ${{ github.token }}
