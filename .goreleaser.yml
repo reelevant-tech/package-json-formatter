@@ -4,5 +4,29 @@ project_name: package-json-formatter
 
 builds:
 - main: ./cmd/pjf
+  env:
+  - CGO_ENABLED=0
+  goos:
+  - linux
+  - darwin
+  - windows
+  goarch:
+  - amd64
+  - arm64
+  - "386"
+  ignore:
+  - goos: darwin
+    goarch: "386"
+  - goos: windows
+    goarch: amd64
+  - goos: windows
+    goarch: arm64
   ldflags:
   - -s -w -X package-json-formatter/cmd/pjf.version={{.Version}} -X package-json-formatter/cmd/pjf.commit={{.FullCommit}} -X package-json-formatter/cmd/pjf.buildDate={{.Date}}
+
+archives:
+- format: tar.gz
+
+checksum:
+  name_template: "{{ .ProjectName }}_{{ .Version }}_checksums.txt"
+  algorithm: sha256

@@ -1,4 +1,4 @@
-name: Prepare next release 🚀
+name: Prepare next release
 
 on:
   push:
@@ -6,12 +6,23 @@ on:
     - master
 
 jobs:
-  build:
-    name: Run release draft to extract labels ☕️
+  release-draft:
+    name: Update release draft
     runs-on: ubuntu-latest
     steps:
-    - name: Run release draft to extract labels ☕️
-      uses: tchoupinax/repo-config/shared-actions/steps/dx/prepare-draft-release@v0
+    - name: Clone repository
+      uses: actions/checkout@v4
       with:
-        appId: ${{ secrets.DEPLOY_APP_ID }}
-        privateKey: ${{ secrets.DEPLOY_APP_KEY }}
+        fetch-depth: 0
+
+    - name: Generate token
+      uses: actions/create-github-app-token@v3
+      id: app-token
+      with:
+        app-id: ${{ secrets.DEPLOY_APP_ID }}
+        private-key: ${{ secrets.DEPLOY_APP_KEY }}
+
+    - name: Run release drafter
+      uses: release-drafter/release-drafter@v7
+      env:
+        GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
