@@ -1,17 +1,36 @@
-name: Prepare next release 🚀
+name: Release
 
 on:
   push:
     branches:
     - master
 
+permissions:
+  contents: write
+
 jobs:
-  build:
-    name: Run release draft to extract labels ☕️
+  release:
+    name: Release
     runs-on: ubuntu-latest
     steps:
-    - name: Run release draft to extract labels ☕️
-      uses: tchoupinax/repo-config/shared-actions/steps/dx/prepare-draft-release@v0
+    - name: Clone repository
+      uses: actions/checkout@v4
       with:
-        appId: ${{ secrets.DEPLOY_APP_ID }}
-        privateKey: ${{ secrets.DEPLOY_APP_KEY }}
+        fetch-depth: 0
+
+    - name: Detect Go version
+      id: vars
+      run: echo "go_version=$(grep '^go ' go.mod | awk '{print $2}')" >> "$GITHUB_OUTPUT"
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: ${{ steps.vars.outputs.go_version }}
+
+    - name: Run GoReleaser
+      uses: goreleaser/goreleaser-action@v6
+      with:
+        version: "~> v2"
+        args: release --clean
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
